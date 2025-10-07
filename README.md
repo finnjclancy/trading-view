@@ -5,7 +5,6 @@ This is a repo containing newer trading view indicators I've made.
 
 ### My TradingView account:
 https://www.tradingview.com/u/finnclancy/ 
-
 <br>
 
 ### Note:
