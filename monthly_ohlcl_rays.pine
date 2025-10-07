@@ -1,0 +1,155 @@
+//@version=6
+indicator("Monthly OHLC Rays", shorttitle="Monthly OHLC Rays", overlay=true, max_lines_count=500, max_labels_count=500, scale=scale.none)
+
+// ————— User Inputs for Customization —————
+// Dummy inputs to prevent settings from showing in chart name
+_ = input(true, "", inline="dummy", group="═══════════════════════════")
+
+lookbackMonths = input.int(12, "Lookback Period (Months)", minval=1, maxval=120)
+showOpen = input.bool(true, "Show Open")
+showHigh = input.bool(true, "Show High")
+showLow = input.bool(true, "Show Low")
+showClose = input.bool(true, "Show Close")
+
+colorOpen = input.color(color.new(color.blue, 0), "Open Color")
+colorHigh = input.color(color.new(color.green, 0), "High Color")
+colorLow = input.color(color.new(color.red, 0), "Low Color")
+colorClose = input.color(color.new(color.orange, 0), "Close Color")
+
+lineWidthOpen = input.int(1, "Open Line Width", minval=1, maxval=5)
+lineWidthHigh = input.int(1, "High Line Width", minval=1, maxval=5)
+lineWidthLow = input.int(1, "Low Line Width", minval=1, maxval=5)
+lineWidthClose = input.int(1, "Close Line Width", minval=1, maxval=5)
+
+labelSize = input.string(size.tiny, "Label Size", options=[size.auto, size.tiny, size.small, size.normal, size.large, size.huge])
+
+var string[] MONTHS = array.from("Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", "Jul.", "Aug.", "Sept.", "Oct.", "Nov.", "Dec.")
+
+// Get month label function
+getMonthLabel(t) =>
+    string month_str = MONTHS.get(month(t) - 1)
+    string year_str = str.substring(str.tostring(year(t)), 2, 4)
+    month_str + " '" + year_str
+
+// Track monthly data with timestamps for each OHLC event
+var int lastMonthTime = na
+var float lastMonthOpen = na
+var float lastMonthHigh = na
+var float lastMonthLow = na
+var float lastMonthClose = na
+var int lastMonthOpenTime = na
+var int lastMonthHighTime = na
+var int lastMonthLowTime = na
+var int lastMonthCloseTime = na
+
+// Arrays to store historical monthly data
+var array<int> monthTimes = array.new<int>()
+var array<float> monthOpens = array.new<float>()
+var array<float> monthHighs = array.new<float>()
+var array<float> monthLows = array.new<float>()
+var array<float> monthCloses = array.new<float>()
+var array<int> monthOpenTimes = array.new<int>()
+var array<int> monthHighTimes = array.new<int>()
+var array<int> monthLowTimes = array.new<int>()
+var array<int> monthCloseTimes = array.new<int>()
+
+// Detect month change
+currentMonth = month(time)
+currentYear = year(time)
+isNewMonth = ta.change(time("M")) != 0
+
+// Initialize or update current month data
+if na(lastMonthTime) or isNewMonth
+    // Save the previous month if it exists
+    if not na(lastMonthTime)
+        array.push(monthTimes, lastMonthTime)
+        array.push(monthOpens, lastMonthOpen)
+        array.push(monthHighs, lastMonthHigh)
+        array.push(monthLows, lastMonthLow)
+        array.push(monthCloses, lastMonthClose)
+        array.push(monthOpenTimes, lastMonthOpenTime)
+        array.push(monthHighTimes, lastMonthHighTime)
+        array.push(monthLowTimes, lastMonthLowTime)
+        array.push(monthCloseTimes, lastMonthCloseTime)
+        
+        // Keep only lookback months
+        if array.size(monthTimes) > lookbackMonths
+            array.shift(monthTimes)
+            array.shift(monthOpens)
+            array.shift(monthHighs)
+            array.shift(monthLows)
+            array.shift(monthCloses)
+            array.shift(monthOpenTimes)
+            array.shift(monthHighTimes)
+            array.shift(monthLowTimes)
+            array.shift(monthCloseTimes)
+    
+    // Start new month
+    lastMonthTime := time
+    lastMonthOpen := open
+    lastMonthHigh := high
+    lastMonthLow := low
+    lastMonthClose := close
+    lastMonthOpenTime := time
+    lastMonthHighTime := time
+    lastMonthLowTime := time
+    lastMonthCloseTime := time
+else
+    // Update current month
+    if high > lastMonthHigh
+        lastMonthHigh := high
+        lastMonthHighTime := time
+    
+    if low < lastMonthLow
+        lastMonthLow := low
+        lastMonthLowTime := time
+    
+    lastMonthClose := close
+    lastMonthCloseTime := time
+
+// Draw all lines on every bar (they will be recreated)
+if barstate.islast and array.size(monthTimes) > 0
+    for i = 0 to array.size(monthTimes) - 1
+        mTime = array.get(monthTimes, i)
+        mOpen = array.get(monthOpens, i)
+        mHigh = array.get(monthHighs, i)
+        mLow = array.get(monthLows, i)
+        mClose = array.get(monthCloses, i)
+        mOpenTime = array.get(monthOpenTimes, i)
+        mHighTime = array.get(monthHighTimes, i)
+        mLowTime = array.get(monthLowTimes, i)
+        mCloseTime = array.get(monthCloseTimes, i)
+        
+        monthLabel = getMonthLabel(mTime)
+        
+        if showOpen
+            line.new(mOpenTime, mOpen, mOpenTime + 1, mOpen, xloc=xloc.bar_time, extend=extend.right, color=colorOpen, width=lineWidthOpen)
+            label.new(bar_index + 10, mOpen, monthLabel + " Open", style=label.style_none, color=color.new(color.white, 100), textcolor=colorOpen, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+        
+        if showHigh
+            line.new(mHighTime, mHigh, mHighTime + 1, mHigh, xloc=xloc.bar_time, extend=extend.right, color=colorHigh, width=lineWidthHigh)
+            label.new(bar_index + 10, mHigh, monthLabel + " High", style=label.style_none, color=color.new(color.white, 100), textcolor=colorHigh, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+        
+        if showLow
+            line.new(mLowTime, mLow, mLowTime + 1, mLow, xloc=xloc.bar_time, extend=extend.right, color=colorLow, width=lineWidthLow)
+            label.new(bar_index + 10, mLow, monthLabel + " Low", style=label.style_none, color=color.new(color.white, 100), textcolor=colorLow, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+        
+        if showClose
+            line.new(mCloseTime, mClose, mCloseTime + 1, mClose, xloc=xloc.bar_time, extend=extend.right, color=colorClose, width=lineWidthClose)
+            label.new(bar_index + 10, mClose, monthLabel + " Close", style=label.style_none, color=color.new(color.white, 100), textcolor=colorClose, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+    
+    // Draw current month (in progress)
+    if not na(lastMonthTime)
+        currentMonthLabel = getMonthLabel(lastMonthTime)
+        
+        if showOpen
+            line.new(lastMonthOpenTime, lastMonthOpen, lastMonthOpenTime + 1, lastMonthOpen, xloc=xloc.bar_time, extend=extend.right, color=colorOpen, width=lineWidthOpen)
+            label.new(bar_index + 10, lastMonthOpen, currentMonthLabel + " Open", style=label.style_none, color=color.new(color.white, 100), textcolor=colorOpen, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+        
+        if showHigh
+            line.new(lastMonthHighTime, lastMonthHigh, lastMonthHighTime + 1, lastMonthHigh, xloc=xloc.bar_time, extend=extend.right, color=colorHigh, width=lineWidthHigh)
+            label.new(bar_index + 10, lastMonthHigh, currentMonthLabel + " High", style=label.style_none, color=color.new(color.white, 100), textcolor=colorHigh, size=labelSize, yloc=yloc.price, textalign=text.align_right)
+        
+        if showLow
+            line.new(lastMonthLowTime, lastMonthLow, lastMonthLowTime + 1, lastMonthLow, xloc=xloc.bar_time, extend=extend.right, color=colorLow, width=lineWidthLow)
+            label.new(bar_index + 10, lastMonthLow, currentMonthLabel + " Low", style=label.style_none, color=color.new(color.white, 100), textcolor=colorLow, size=labelSize, yloc=yloc.price, textalign=text.align_right)
