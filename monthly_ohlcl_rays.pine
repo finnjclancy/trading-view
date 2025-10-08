@@ -1,10 +1,6 @@
 //@version=6
 indicator("Monthly OHLC Rays", shorttitle="Monthly OHLC Rays", overlay=true, max_lines_count=500, max_labels_count=500, scale=scale.none)
 
-// ————— User Inputs for Customization —————
-// Dummy inputs to prevent settings from showing in chart name
-_ = input(true, "", inline="dummy", group="═══════════════════════════")
-
 lookbackMonths = input.int(12, "Lookback Period (Months)", minval=1, maxval=120)
 showOpen = input.bool(true, "Show Open")
 showHigh = input.bool(true, "Show High")
