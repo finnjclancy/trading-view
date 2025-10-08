@@ -27,8 +27,36 @@ var string[] MONTHS = array.from("Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.", 
 
 // Get month label function
 getMonthLabel(t) =>
-    string month_str = MONTHS.get(month(t) - 1)
+    int m = month(t)
     string year_str = str.substring(str.tostring(year(t)), 2, 4)
+    string month_str = ""
+    
+    if m == 1
+        month_str := "Jan."
+    if m == 2
+        month_str := "Feb."
+    if m == 3
+        month_str := "Mar."
+    if m == 4
+        month_str := "Apr"
+    if m == 5
+        month_str := "May."
+    if m == 6
+        month_str := "Jun."
+    if m == 7
+        month_str := "Jul."
+    if m == 8
+        month_str := "Aug."
+    if m == 9
+        month_str := "Sept."
+    if m == 10
+        month_str := "Oct."
+    if m == 11
+        month_str := "Nov."
+    if m == 12
+        month_str := "Dec."
+        year_str := str.substring(str.tostring(year(t) + 1), 2, 4)
+    
     month_str + " '" + year_str
 
 // Track monthly data with timestamps for each OHLC event
